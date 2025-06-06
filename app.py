@@ -31,10 +31,10 @@ with col1:
     topic = st.selectbox("🎯 選擇貼文主題", df["title"].dropna().unique())
 
 with col2:
-    target = st.selectbox("👥 選擇目標對象", df["target"].dropna().unique())
+    target = st.selectbox("👥 選擇目標對象", df["text"].dropna().unique())
 
 # 過濾資料
-filtered_df = df[(df["title"] == topic) & (df["target"] == target)]
+filtered_df = df[(df["title"] == topic) & (df["text"] == target)]
 
 if not filtered_df.empty:
     row = filtered_df.iloc[0]

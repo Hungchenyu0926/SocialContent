@@ -11,7 +11,7 @@ st.title("📱 AI 社群內容生成器")
 st.markdown("請從下拉選單中選擇主題與對象，我們將自動生成貼文建議與圖片描述。")
 
 # 載入資料（CSV 來自 GitHub Sheets 的 raw 連結）
-csv_url = "https://raw.githubusercontent.com/Hungchenyu926/SocialContent/main/social_content.csv"
+csv_url = "https://raw.githubusercontent.com/Hungchenyu926/SocialContent/main/social_posts.csv"
 
 @st.cache_data
 def load_data():

@@ -61,5 +61,3 @@ for index, row in df.iterrows():
                 generated = response.choices[0].message.content.strip()
                 st.markdown("#### ✨ 生成內容")
                 st.markdown(generated)
-
-

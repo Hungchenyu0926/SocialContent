@@ -17,7 +17,8 @@ st.title("🤖 AI社群圖文自動生成 App")
 st.markdown("請於 Google Sheet 中填入主題、關鍵字與網址")
 
 # 從 Google Sheet 讀取資料
-sheet_url = st.secrets["SHEET_URL"]  # 在 secrets.toml 中設定
+sheet_id = st.secrets["SHEET_ID"]
+sheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit"
 df = pd.read_csv(sheet_url)
 
 st.subheader("📝 原始資料")

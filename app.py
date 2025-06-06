@@ -3,16 +3,17 @@ import openai
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from utils.gsheet import save_to_sheet
+from utils.gsheet import save_to_sheet  # 確保您有正確實作此模組
 
 # 設定 OpenAI API 金鑰
-openai.api_key = st.secrets["OPENAI"]["OPENAI_API_KEY"]
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
+# 設定 Streamlit 頁面資訊
 st.set_page_config(page_title="社群圖文生成器", layout="wide")
 st.title("🤖 AI社群圖文自動生成 App")
 st.markdown("請於 Google Sheet 中填入主題、關鍵字與網址")
 
-# 從 Google Sheet 讀取資料
+# 讀取 Google Sheet 資料
 sheet_id = st.secrets["SHEET_ID"]
 csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
 df = pd.read_csv(csv_url)
@@ -20,6 +21,7 @@ df = pd.read_csv(csv_url)
 st.subheader("📝 原始資料")
 st.dataframe(df)
 
+# 網頁內容擷取函式
 def fetch_url_content(url):
     try:
         response = requests.get(url, timeout=5)
@@ -27,10 +29,11 @@ def fetch_url_content(url):
         paragraphs = soup.find_all("p")
         return " ".join([p.text for p in paragraphs[:5]])
     except Exception as e:
-        return f"無法擷取網址內容: {str(e)}"
+        return f"⚠️ 無法擷取網址內容: {str(e)}"
 
 st.subheader("📤 AI 生成內容")
 
+# 逐列處理每個主題
 for index, row in df.iterrows():
     with st.expander(f"主題：{row['主題']}"):
         keywords = row['關鍵字']
@@ -58,4 +61,5 @@ for index, row in df.iterrows():
                 generated = response.choices[0].message.content.strip()
                 st.markdown("#### ✨ 生成內容")
                 st.markdown(generated)
+
 

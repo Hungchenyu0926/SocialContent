@@ -28,7 +28,7 @@ except Exception as e:
 col1, col2 = st.columns(2)
 
 with col1:
-    topic = st.selectbox("🎯 選擇貼文主題", df["主題"].dropna().unique())
+    topic = st.selectbox("🎯 選擇貼文主題", df["title"].dropna().unique())
 
 with col2:
     target = st.selectbox("👥 選擇目標對象", df["對象"].dropna().unique())

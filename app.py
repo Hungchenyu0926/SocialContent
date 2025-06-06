@@ -1,4 +1,5 @@
 import streamlit as st
+from openai import OpenAI
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -6,7 +7,9 @@ from openai import OpenAI
 from utils.gsheet import save_to_sheet
 
 # 初始化 OpenAI client（使用 secrets）
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+openai_api_key = st.secrets["OPENAI"]["OPENAI_API_KEY"]
+client = OpenAI(api_key=openai_api_key)
+
 
 st.set_page_config(page_title="社群圖文生成器", layout="wide")
 

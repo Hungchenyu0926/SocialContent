@@ -55,7 +55,7 @@ for index, row in df.iterrows():
         if st.button(f"產生：{row['主題']}", key=f"btn_{index}"):
             with st.spinner("AI 正在生成中..."):
                 response = openai.ChatCompletion.create(
-                    model="gpt-4",
+                    model="gpt-3.5-turbo",
                     messages=[{"role": "user", "content": full_prompt}]
                 )
                 generated = response.choices[0].message.content.strip()

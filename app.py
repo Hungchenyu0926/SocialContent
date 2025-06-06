@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from utils.gsheet import save_to_sheet
 
 # 設定 OpenAI API 金鑰
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key = st.secrets["OPENAI"]["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="社群圖文生成器", layout="wide")
 st.title("🤖 AI社群圖文自動生成 App")

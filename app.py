@@ -1,5 +1,5 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 from utils.gsheet import save_to_sheet
 from PIL import Image
 import requests
@@ -7,7 +7,13 @@ from io import BytesIO
 from bs4 import BeautifulSoup
 import urllib.request
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "user", "content": full_prompt}
+    ]
+)
 
 st.set_page_config(page_title="AI 社群內容自動生成器", layout="centered")
 st.title("🧠 AI 社群圖像與貼文生成器")

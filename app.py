@@ -38,17 +38,17 @@ filtered_df = df[(df["title"] == topic) & (df["text"] == target)]
 
 if not filtered_df.empty:
     row = filtered_df.iloc[0]
-    關鍵詞 = row["keyword"]
+    keyword = row["keyword"]
     purpose = row["purpose"]
 
     # 建立 Prompt
     full_prompt = f"""
-你是一位社群行銷專家，請根據以下條件設計一則社群貼文建議與一張圖片描述。
+你是一位社群行銷專家，請根據以下條件設計一則社群貼文建議與一張圖片描述：
 
-主題: {title}
-對象: {target}
-關鍵詞: {keyword}
-目的: {purpose}
+🎯 主題：{topic}
+👥 對象：{target}
+🔑 關鍵詞：{keyword}
+🎯 目的：{purpose}
 
 請輸出格式如下：
 ---

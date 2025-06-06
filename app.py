@@ -55,7 +55,7 @@ if not filtered_df.empty:
     # 呼叫 OpenAI GPT-4 API 產生內容
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": full_prompt}]
         )
         result = response["choices"][0]["message"]["content"]

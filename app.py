@@ -31,21 +31,21 @@ with col1:
     topic = st.selectbox("🎯 選擇貼文主題", df["title"].dropna().unique())
 
 with col2:
-    target = st.selectbox("👥 選擇目標對象", df["text"].dropna().unique())
+    target = st.selectbox("👥 選擇目標對象", df["target"].dropna().unique())
 
 # 過濾資料
 filtered_df = df[(df["title"] == topic) & (df["text"] == target)]
 
 if not filtered_df.empty:
     row = filtered_df.iloc[0]
-    keyword = row["關鍵詞"]
-    purpose = row["目的"]
+    keyword = row["keyword"]
+    purpose = row["purpose"]
 
     # 建立 Prompt
     full_prompt = f"""
 你是一位社群行銷專家，請根據以下條件設計一則社群貼文建議與一張圖片描述。
 
-主題: {topic}
+主題: {title}
 對象: {target}
 關鍵詞: {keyword}
 目的: {purpose}

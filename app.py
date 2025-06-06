@@ -1,39 +1,36 @@
 import streamlit as st
 import pandas as pd
-from openai import OpenAI
+import openai
+import requests
+from io import StringIO
 
-# 初始化 OpenAI 客戶端（使用 Streamlit Secrets 儲存 API 金鑰）
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# 🚀 設定 OpenAI API Key（建議從 secrets 管理）
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# 頁面標題與說明
-st.set_page_config(page_title="社群內容產生器", layout="centered")
-st.title("📱 AI 社群內容生成器")
-st.markdown("請從下拉選單中選擇主題與對象，我們將自動生成貼文建議與圖片描述。")
-
-# 載入資料（CSV 來自 GitHub Sheets 的 raw 連結）
-csv_url = "https://raw.githubusercontent.com/Hungchenyu0926/SocialContent/main/social_posts.csv"
-
-
-@st.cache_data
-def load_data():
-    return pd.read_csv(csv_url)
+# 🧾 讀取 CSV 資料
+csv_url = "https://raw.githubusercontent.com/Hungchenyu0926/socialcontent/main/social_posts.csv"
 
 try:
-    df = load_data()
+    response = requests.get(csv_url)
+    response.raise_for_status()
+    df = pd.read_csv(StringIO(response.text))
+    df.columns = df.columns.str.strip()  # 移除欄位名稱空白
 except Exception as e:
     st.error(f"無法載入資料，請檢查連結或格式錯誤。\n錯誤訊息: {e}")
     st.stop()
 
-# 使用者選擇欄位
+st.title("🎯 社群貼文產生器 SmartPost-AI")
+
+# 使用者選單
 col1, col2 = st.columns(2)
 
 with col1:
-    topic = st.selectbox("🎯 選擇貼文主題", df["title"].dropna().unique())
+    topic = st.selectbox("📌 選擇貼文主題", df["title"].dropna().unique())
 
 with col2:
     target = st.selectbox("👥 選擇目標對象", df["text"].dropna().unique())
 
-# 過濾資料
+# 過濾符合條件的資料
 filtered_df = df[(df["title"] == topic) & (df["text"] == target)]
 
 if not filtered_df.empty:
@@ -45,34 +42,30 @@ if not filtered_df.empty:
     full_prompt = f"""
 你是一位社群行銷專家，請根據以下條件設計一則社群貼文建議與一張圖片描述：
 
-🎯 主題：{topic}
-👥 對象：{target}
-🔑 關鍵詞：{keyword}
-🎯 目的：{purpose}
+🎯 主題: {topic}
+👥 目標對象: {target}
+🔑 關鍵詞: {keyword}
+🎯 目的: {purpose}
 
-請輸出格式如下：
----
-貼文建議：
-（請以繁體中文撰寫一則適合的社群貼文內容）
-
-圖片描述建議：
-（建議的圖片視覺元素與風格）
+請輸出：
+1. 一段吸引人的社群貼文內容（約100字）
+2. 一段圖片敘述（提示給 AI 畫圖用，約30字）
 """
 
-    if st.button("🎨 產生社群內容"):
-        with st.spinner("生成中，請稍候..."):
-            try:
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": full_prompt}]
-                )
-                result_text = response.choices[0].message.content
-                st.success("產生完成 ✅")
-                st.markdown(result_text)
+    # 呼叫 OpenAI GPT-4 API 產生內容
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": full_prompt}]
+        )
+        result = response["choices"][0]["message"]["content"]
+        st.success("🎉 貼文與圖片提示產生完成！")
+        st.markdown(result)
 
-            except Exception as e:
-                st.error(f"OpenAI 回傳錯誤: {e}")
+    except Exception as e:
+        st.error(f"產生內容時發生錯誤：{e}")
 
 else:
-    st.warning("查無符合的主題與對象組合，請重新選擇。")
+    st.warning("❗ 沒有符合的資料，請重新選擇主題與對象。")
+
 

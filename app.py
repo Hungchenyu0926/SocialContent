@@ -34,7 +34,7 @@ with col2:
     target = st.selectbox("👥 選擇目標對象", df["target"].dropna().unique())
 
 # 過濾資料
-filtered_df = df[(df["title"] == topic) & (df["text"] == target)]
+filtered_df = df[(df["title"] == topic) & (df["target"] == target)]
 
 if not filtered_df.empty:
     row = filtered_df.iloc[0]

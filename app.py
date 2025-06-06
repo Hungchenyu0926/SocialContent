@@ -1,58 +1,65 @@
 import streamlit as st
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 from openai import OpenAI
 from utils.gsheet import save_to_sheet
-from PIL import Image
-import requests
-from io import BytesIO
-from bs4 import BeautifulSoup
-import urllib.request
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[
-        {"role": "user", "content": full_prompt}
-    ]
-)
+# 初始化 OpenAI client（使用 secrets）
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-st.set_page_config(page_title="AI 社群內容自動生成器", layout="centered")
-st.title("🧠 AI 社群圖像與貼文生成器")
+st.set_page_config(page_title="社群圖文生成器", layout="wide")
 
-topic = st.text_input("輸入主題")
-keywords = st.text_input("輸入關鍵字（用逗號分隔）")
-url = st.text_input("輸入相關網址（選填）")
+st.title("🤖 AI社群圖文自動生成 App")
+st.markdown("請於 Google Sheet 中填入主題、關鍵字與網址")
+
+# 從 Google Sheet 讀取資料
+sheet_url = st.secrets["SHEET_URL"]  # 在 secrets.toml 中設定
+df = pd.read_csv(sheet_url)
+
+st.subheader("📝 原始資料")
+st.dataframe(df)
 
 def fetch_url_content(url):
     try:
-        html = urllib.request.urlopen(url).read()
-        soup = BeautifulSoup(html, "html.parser")
-        text = soup.get_text()
-        return text[:2000]
-    except:
-        return ""
+        response = requests.get(url, timeout=5)
+        soup = BeautifulSoup(response.text, "html.parser")
+        paragraphs = soup.find_all("p")
+        return " ".join([p.text for p in paragraphs[:5]])  # 簡略擷取前五段
+    except Exception as e:
+        return f"無法擷取網址內容: {str(e)}"
 
-if st.button("🎨 生成圖像與貼文") and (topic or keywords or url):
-    with st.spinner("生成中..."):
-        url_content = fetch_url_content(url) if url else ""
-        full_prompt = f"主題：{topic}\n關鍵字：{keywords}\n{url_content}\n\n請針對上述內容，撰寫一段適合用於社群平台的感性貼文，附上鼓舞人心的語句。"
+st.subheader("📤 AI 生成內容")
 
-        # 生成貼文文字
-        post_response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": full_prompt}]
-        )
-        post_text = post_response.choices[0].message["content"].strip()
+for index, row in df.iterrows():
+    with st.expander(f"主題：{row['主題']}"):
+        keywords = row['關鍵字']
+        url = row['網址']
+        external_content = fetch_url_content(url)
 
-        # 生成圖像
-        image_response = openai.Image.create(
-            prompt=f"{topic} {keywords}, Pixar style, uplifting, detailed, 4k illustration",
-            n=1,
-            size="512x512"
-        )
-        image_url = image_response['data'][0]['url']
+        full_prompt = f"""
+你是一位社群行銷內容撰寫助手。請根據以下資訊生成一篇適合貼在 Facebook 的貼文，並建議一張圖片的圖像風格與畫面主題：
 
-        st.image(image_url, caption="🎨 AI 生成圖像")
-        st.text_area("📄 生成貼文內容", value=post_text, height=200)
+主題：{row['主題']}
+關鍵字：{keywords}
+網址內容摘要：{external_content}
 
-        save_to_sheet(topic, keywords, post_text, image_url, url)
-        st.success("✅ 已儲存到 Google Sheet")
+請輸出格式如下：
+1. 貼文文字（繁體中文）
+2. 推薦圖片描述（圖像風格 + 畫面元素）
+"""
+
+        if st.button(f"產生：{row['主題']}", key=f"btn_{index}"):
+            with st.spinner("AI 正在生成中..."):
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": full_prompt}]
+                )
+
+                generated = response.choices[0].message.content.strip()
+                st.markdown("#### ✨ 生成內容")
+                st.markdown(generated)
+
+                # 儲存到 Google Sheet
+                save_to_sheet(row['主題'], keywords, url, generated)
+                st.success("已儲存至 Google Sheet ✅")

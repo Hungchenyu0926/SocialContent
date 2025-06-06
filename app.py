@@ -38,7 +38,7 @@ filtered_df = df[(df["title"] == topic) & (df["text"] == target)]
 
 if not filtered_df.empty:
     row = filtered_df.iloc[0]
-    keyword = row["關鍵詞"]
+    關鍵詞 = row["keyword"]
     purpose = row["purpose"]
 
     # 建立 Prompt

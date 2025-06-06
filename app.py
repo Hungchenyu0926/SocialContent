@@ -1,63 +1,77 @@
 import streamlit as st
-import openai
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-from utils.gsheet import save_to_sheet  # 確保您有正確實作此模組
+from openai import OpenAI
 
-# 設定 OpenAI API 金鑰
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# 初始化 OpenAI 客戶端（使用 Streamlit Secrets 儲存 API 金鑰）
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# 設定 Streamlit 頁面資訊
-st.set_page_config(page_title="社群圖文生成器", layout="wide")
-st.title("🤖 AI社群圖文自動生成 App")
-st.markdown("請於 Google Sheet 中填入主題、關鍵字與網址")
+# 頁面標題與說明
+st.set_page_config(page_title="社群內容產生器", layout="centered")
+st.title("📱 AI 社群內容生成器")
+st.markdown("請從下拉選單中選擇主題與對象，我們將自動生成貼文建議與圖片描述。")
 
-# 讀取 Google Sheet 資料
-sheet_id = st.secrets["SHEET_ID"]
-csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
-df = pd.read_csv(csv_url)
+# 載入資料（CSV 來自 GitHub Sheets 的 raw 連結）
+csv_url = "https://raw.githubusercontent.com/your-username/your-repo-name/main/your-sheet.csv"
 
-st.subheader("📝 原始資料")
-st.dataframe(df)
+@st.cache_data
+def load_data():
+    return pd.read_csv(csv_url)
 
-# 網頁內容擷取函式
-def fetch_url_content(url):
-    try:
-        response = requests.get(url, timeout=5)
-        soup = BeautifulSoup(response.text, "html.parser")
-        paragraphs = soup.find_all("p")
-        return " ".join([p.text for p in paragraphs[:5]])
-    except Exception as e:
-        return f"⚠️ 無法擷取網址內容: {str(e)}"
+try:
+    df = load_data()
+except Exception as e:
+    st.error(f"無法載入資料，請檢查連結或格式錯誤。\n錯誤訊息: {e}")
+    st.stop()
 
-st.subheader("📤 AI 生成內容")
+# 使用者選擇欄位
+col1, col2 = st.columns(2)
 
-# 逐列處理每個主題
-for index, row in df.iterrows():
-    with st.expander(f"主題：{row['主題']}"):
-        keywords = row['關鍵字']
-        url = row['網址']
-        external_content = fetch_url_content(url)
+with col1:
+    topic = st.selectbox("🎯 選擇貼文主題", df["主題"].dropna().unique())
 
-        full_prompt = f"""
-你是一位社群行銷內容撰寫助手。請根據以下資訊生成一篇適合貼在 Facebook 的貼文，並建議一張圖片的圖像風格與畫面主題：
+with col2:
+    target = st.selectbox("👥 選擇目標對象", df["對象"].dropna().unique())
 
-主題：{row['主題']}
-關鍵字：{keywords}
-網址內容摘要：{external_content}
+# 過濾資料
+filtered_df = df[(df["主題"] == topic) & (df["對象"] == target)]
+
+if not filtered_df.empty:
+    row = filtered_df.iloc[0]
+    keyword = row["關鍵詞"]
+    purpose = row["目的"]
+
+    # 建立 Prompt
+    full_prompt = f"""
+你是一位社群行銷專家，請根據以下條件設計一則社群貼文建議與一張圖片描述。
+
+主題: {topic}
+對象: {target}
+關鍵詞: {keyword}
+目的: {purpose}
 
 請輸出格式如下：
-1. 貼文文字（繁體中文）
-2. 推薦圖片描述（圖像風格 + 畫面元素）
+---
+貼文建議：
+（請以繁體中文撰寫一則適合的社群貼文內容）
+
+圖片描述建議：
+（建議的圖片視覺元素與風格）
 """
 
-        if st.button(f"產生：{row['主題']}", key=f"btn_{index}"):
-            with st.spinner("AI 正在生成中..."):
-                response = openai.ChatCompletion.create(
+    if st.button("🎨 產生社群內容"):
+        with st.spinner("生成中，請稍候..."):
+            try:
+                response = client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=[{"role": "user", "content": full_prompt}]
                 )
-                generated = response.choices[0].message.content.strip()
-                st.markdown("#### ✨ 生成內容")
-                st.markdown(generated)
+                result_text = response.choices[0].message.content
+                st.success("產生完成 ✅")
+                st.markdown(result_text)
+
+            except Exception as e:
+                st.error(f"OpenAI 回傳錯誤: {e}")
+
+else:
+    st.warning("查無符合的主題與對象組合，請重新選擇。")
+
